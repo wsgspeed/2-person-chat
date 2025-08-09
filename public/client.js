@@ -1,4 +1,12 @@
 // client.js - browser side E2EE + WebSocket chat for SPEED & NOX
+window.addEventListener("load", () => {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission().then(permission => {
+      console.log("Notification permission:", permission);
+    });
+  }
+});
+
 
 const wsUrl = (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host;
 let ws;
@@ -257,3 +265,4 @@ textEl.addEventListener("keydown", (e) => {
     sendBtn.click();
   }
 });
+
