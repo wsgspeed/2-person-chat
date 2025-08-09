@@ -266,3 +266,39 @@ textEl.addEventListener("keydown", (e) => {
   }
 });
 
+// Block copy (Ctrl+C, context menu copy, etc)
+window.addEventListener("copy", (e) => {
+  e.preventDefault();
+  alert("Copying chat content is disabled.");
+});
+
+// Optional: Block right-click context menu (to block 'Copy' there)
+window.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  alert("Right-click is disabled.");
+});
+
+// Detect Print Screen key to blur chat
+window.addEventListener("keyup", (e) => {
+  if (e.key === "PrintScreen") {
+    const messages = document.getElementById("messages");
+    if (messages) {
+      messages.style.filter = "blur(10px)";
+    }
+    alert("Screenshots are not allowed. Chat blurred.");
+  }
+});
+
+// Optional: Blur chat when tab/window loses focus (extra privacy)
+document.addEventListener("visibilitychange", () => {
+  const messages = document.getElementById("messages");
+  if (!messages) return;
+  if (document.hidden) {
+    messages.style.filter = "blur(10px)";
+  } else {
+    messages.style.filter = "none";
+  }
+});
+
+
+
