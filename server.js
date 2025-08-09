@@ -38,17 +38,32 @@ const clients = new Map(); // username -> { ws, pubkey?, status: "online"/"offli
 
 function checkCredentials(username, password, ip) {
   if (username === "SPEED") {
-    if (password !== SPEED_PASSWORD) return false;
-    if (SPEED_IP && ip !== SPEED_IP) return false;
+    if (password !== SPEED_PASSWORD) {
+      console.log("Speed password invalid");
+      return false;
+    }
+    // Commenting out IP check for now
+    // if (SPEED_IP && ip !== SPEED_IP) {
+    //   console.log(`Speed IP mismatch: ${ip} !== ${SPEED_IP}`);
+    //   return false;
+    // }
     return true;
   }
   if (username === "NOX") {
-    if (password !== NOX_PASSWORD) return false;
-    if (NOX_IP && ip !== NOX_IP) return false;
+    if (password !== NOX_PASSWORD) {
+      console.log("Nox password invalid");
+      return false;
+    }
+    // Commenting out IP check for now
+    // if (NOX_IP && ip !== NOX_IP) {
+    //   console.log(`Nox IP mismatch: ${ip} !== ${NOX_IP}`);
+    //   return false;
+    // }
     return true;
   }
   return false;
 }
+
 
 function broadcastPresence() {
   const presence = {
@@ -137,3 +152,4 @@ wss.on("connection", (ws, req) => {
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
