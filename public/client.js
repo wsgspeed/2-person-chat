@@ -1,24 +1,26 @@
-// client.js - browser side E2EE + websocket
+// client.js - browser side E2EE + WebSocket chat for SPEED & NOX
+
 const wsUrl = (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host;
 let ws;
-let usernameEl = document.getElementById("username");
-let pwdEl = document.getElementById("pwd");
-let connectBtn = document.getElementById("connectBtn");
-let disconnectBtn = document.getElementById("disconnectBtn");
-let sendBtn = document.getElementById("sendBtn");
-let textEl = document.getElementById("text");
-let messagesEl = document.getElementById("messages");
-let presenceEl = document.getElementById("presence");
-let fingerprintEl = document.getElementById("fingerprint");
-let showKeyBtn = document.getElementById("showKeyBtn");
-let verifyBtn = document.getElementById("verifyBtn");
+
+const usernameEl = document.getElementById("username");
+const pwdEl = document.getElementById("pwd");
+const connectBtn = document.getElementById("connectBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
+const sendBtn = document.getElementById("sendBtn");
+const textEl = document.getElementById("text");
+const messagesEl = document.getElementById("messages");
+const presenceEl = document.getElementById("presence");
+const fingerprintEl = document.getElementById("fingerprint");
+const showKeyBtn = document.getElementById("showKeyBtn");
+const verifyBtn = document.getElementById("verifyBtn");
 
 let myKeyPair = null;
 let theirPubKey = null;
 let aesKey = null;
 let authed = false;
 
-// Store last presence state for comparison
+// Store last presence state to detect changes and notify
 let lastPresence = { SPEED: "offline", NOX: "offline" };
 
 function logMessage(who, text, meta = "") {
@@ -115,6 +117,7 @@ function arrayBufferToBase64(buffer) {
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
+
 function base64ToArrayBuffer(base64) {
   const binary = atob(base64);
   const len = binary.length;
@@ -130,18 +133,22 @@ async function computeFingerprint(base64PubKey) {
   return hex.slice(0, 16);
 }
 
+// Connect button handler
 connectBtn.addEventListener("click", async () => {
   if (ws && ws.readyState === WebSocket.OPEN) return;
   await ensureNotificationPermission();
 
-  const username = usernameEl.value;
+  const username = usernameEl.value.toUpperCase();
   const pwd = pwdEl.value;
   if (!pwd) { alert("Enter password"); return; }
+  if (!["SPEED", "NOX"].includes(username)) { alert("Username must be SPEED or NOX"); return; }
 
   ws = new WebSocket(wsUrl);
+
   ws.addEventListener("open", () => {
     ws.send(JSON.stringify({ type: "auth", username, password: pwd }));
   });
+
   ws.addEventListener("message", async (ev) => {
     try {
       const msg = JSON.parse(ev.data);
@@ -164,7 +171,7 @@ connectBtn.addEventListener("click", async () => {
       } else if (msg.type === "presence") {
         presenceEl.textContent = `Presence — SPEED: ${msg.users.SPEED}, NOX: ${msg.users.NOX}`;
 
-        // Check for changes and notify only on status change
+        // Notify on presence change
         ["SPEED", "NOX"].forEach(user => {
           if (lastPresence[user] !== msg.users[user]) {
             notify("Presence update", `${user} is now ${msg.users[user]}`);
@@ -178,6 +185,7 @@ connectBtn.addEventListener("click", async () => {
         const fp = await computeFingerprint(msg.pubkey);
         fingerprintEl.textContent = fp;
         notify("Public key received", `from ${msg.from}`);
+
       } else if (msg.type === "encrypted") {
         if (!aesKey) {
           logMessage("SYSTEM", "Received encrypted message but no AES key yet.");
@@ -209,10 +217,12 @@ connectBtn.addEventListener("click", async () => {
   });
 });
 
+// Disconnect button handler
 disconnectBtn.addEventListener("click", () => {
   if (ws) ws.close();
 });
 
+// Share public key via server
 showKeyBtn.addEventListener("click", async () => {
   if (!myKeyPair) { alert("Connect first to generate keypair"); return; }
   const pub64 = await exportPublicKeyBase64(myKeyPair.publicKey);
@@ -220,6 +230,7 @@ showKeyBtn.addEventListener("click", async () => {
   alert("Public key shared via server.");
 });
 
+// Show local public key fingerprint
 verifyBtn.addEventListener("click", async () => {
   if (!myKeyPair) { alert("Connect first"); return; }
   const pub64 = await exportPublicKeyBase64(myKeyPair.publicKey);
@@ -227,8 +238,9 @@ verifyBtn.addEventListener("click", async () => {
   alert("Your local public key fingerprint (share/compare with your friend):\n" + fp);
 });
 
+// Send encrypted message
 sendBtn.addEventListener("click", async () => {
-  const to = usernameEl.value === "SPEED" ? "NOX" : "SPEED";
+  const to = usernameEl.value.toUpperCase() === "SPEED" ? "NOX" : "SPEED";
   const plaintext = textEl.value.trim();
   if (!plaintext) return;
   if (!aesKey) { alert("No encryption key yet — ensure both users have exchanged public keys."); return; }
@@ -238,6 +250,10 @@ sendBtn.addEventListener("click", async () => {
   textEl.value = "";
 });
 
+// Send on Enter key in textarea
 textEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendBtn.click();
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendBtn.click();
+  }
 });
