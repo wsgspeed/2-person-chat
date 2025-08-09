@@ -42,10 +42,11 @@ function checkCredentials(username, password, ip) {
       console.log("Speed password invalid");
       return false;
     }
-    if (SPEED_IP && ip !== SPEED_IP) {
-      console.log(`Speed IP mismatch: ${ip} !== ${SPEED_IP}`);
-       return false;
-      }
+    // Commenting out IP check for now
+    // if (SPEED_IP && ip !== SPEED_IP) {
+    //   console.log(`Speed IP mismatch: ${ip} !== ${SPEED_IP}`);
+    //   return false;
+    // }
     return true;
   }
   if (username === "NOX") {
@@ -53,27 +54,14 @@ function checkCredentials(username, password, ip) {
       console.log("Nox password invalid");
       return false;
     }
-    if (NOX_IP && ip !== NOX_IP) {
-    console.log(`Nox IP mismatch: ${ip} !== ${NOX_IP}`);
-    return false;
-    }
+    // Commenting out IP check for now
+    // if (NOX_IP && ip !== NOX_IP) {
+    //   console.log(`Nox IP mismatch: ${ip} !== ${NOX_IP}`);
+    //   return false;
+    // }
     return true;
   }
   return false;
-}
-
-
-function broadcastPresence() {
-  const presence = {
-    type: "presence",
-    users: {
-      SPEED: clients.has("SPEED") ? "online" : "offline",
-      NOX: clients.has("NOX") ? "online" : "offline",
-    },
-  };
-  for (const { ws } of clients.values()) {
-    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(presence));
-  }
 }
 
 wss.on("connection", (ws, req) => {
